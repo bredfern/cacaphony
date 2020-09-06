@@ -1,12 +1,12 @@
 const WS_PORT = 8443; //make sure this matches the port for the webscokets server
 
-var localUuid;
-var localDisplayName;
-var localStream;
-var serverConnection;
-var peerConnections = {}; // key is uuid, values are peer connection object and user defined display name string
+let localUuid;
+let localDisplayName;
+let localStream;
+let serverConnection;
+const peerConnections = {}; // key is uuid, values are peer connection object and user defined display name string
 
-var peerConnectionConfig = {
+const peerConnectionConfig = {
   'iceServers': [
     { 'urls': 'stun:stun.stunprotocol.org:3478' },
     { 'urls': 'stun:stun.l.google.com:19302' },
@@ -15,20 +15,17 @@ var peerConnectionConfig = {
 
 function start() {
   localUuid = createUUID();
-
-  // check if "&displayName=xxx" is appended to URL, otherwise alert user to populate
-  var urlParams = new URLSearchParams(window.location.search);
-  localDisplayName = urlParams.get('displayName') || prompt('Enter your name', '');
+  localDisplayName = `user-${localUuid}`;
   document.getElementById('localVideoContainer').appendChild(makeLabel(localDisplayName));
 
   // specify no audio for user media
-  var constraints = {
+  const constraints = {
     video: {
       width: {max: 320},
       height: {max: 240},
       frameRate: {max: 30},
     },
-    audio: false,
+    audio: true,
   };
 
   // set up local video stream
@@ -36,6 +33,7 @@ function start() {
     navigator.mediaDevices.getUserMedia(constraints)
       .then(stream => {
         localStream = stream;
+        
         document.getElementById('localVideo').srcObject = stream;
       }).catch(errorHandler)
 
@@ -54,8 +52,8 @@ function start() {
 }
 
 function gotMessageFromServer(message) {
-  var signal = JSON.parse(message.data);
-  var peerUuid = signal.uuid;
+  const signal = JSON.parse(message.data);
+  const peerUuid = signal.uuid;
 
   // Ignore messages that are not for us or from ourselves
   if (peerUuid == localUuid || (signal.dest != localUuid && signal.dest != 'all')) return;
@@ -87,7 +85,10 @@ function setUpPeer(peerUuid, displayName, initCall = false) {
   peerConnections[peerUuid].pc.onicecandidate = event => gotIceCandidate(event, peerUuid);
   peerConnections[peerUuid].pc.ontrack = event => gotRemoteStream(event, peerUuid);
   peerConnections[peerUuid].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, peerUuid);
-  peerConnections[peerUuid].pc.addStream(localStream);
+  
+  for (const track of localStream.getTracks()) {
+    peerConnections[peerUuid].pc.addTrack(track, localStream);
+  }
 
   if (initCall) {
     peerConnections[peerUuid].pc.createOffer().then(description => createdDescription(description, peerUuid)).catch(errorHandler);
@@ -109,21 +110,28 @@ function createdDescription(description, peerUuid) {
 
 function gotRemoteStream(event, peerUuid) {
   console.log(`got remote stream, peer ${peerUuid}`);
-  //assign stream to new HTML video element
-  var vidElement = document.createElement('video');
-  vidElement.setAttribute('autoplay', '');
-  vidElement.setAttribute('muted', '');
-  vidElement.srcObject = event.streams[0];
 
-  var vidContainer = document.createElement('div');
-  vidContainer.setAttribute('id', 'remoteVideo_' + peerUuid);
-  vidContainer.setAttribute('class', 'videoContainer');
-  vidContainer.appendChild(vidElement);
-  vidContainer.appendChild(makeLabel(peerConnections[peerUuid].displayName));
+    if (document.getElementById('remoteVideo_' + peerUuid)) {
+      console.log(`got remote duplicate stream skipping render, peer ${peerUuid}`);
+    } else {
+      const vidElement = document.createElement('video');
+      vidElement.setAttribute('autoplay', '');
+      vidElement.setAttribute('muted', '');
 
-  document.getElementById('videos').appendChild(vidContainer);
+      vidElement.srcObject = event.streams[0];
 
-  updateLayout();
+      const vidContainer = document.createElement('div');
+      vidContainer.setAttribute('id', 'remoteVideo_' + peerUuid);
+      vidContainer.setAttribute('class', 'videoContainer');
+      vidContainer.appendChild(vidElement);
+      vidContainer.appendChild(makeLabel(peerConnections[peerUuid].displayName));
+
+      document.getElementById('videos').appendChild(vidContainer);
+
+      updateLayout();
+    }
+    
+  
 }
 
 function checkPeerDisconnect(event, peerUuid) {

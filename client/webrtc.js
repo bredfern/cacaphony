@@ -1,4 +1,4 @@
-const WS_PORT = 8443; //make sure this matches the port for the webscokets server
+const WS_PORT = 8443;
 
 let localUuid;
 let localDisplayName;
@@ -112,7 +112,7 @@ function gotRemoteStream(event, peerUuid) {
   console.log(`got remote stream, peer ${peerUuid}`);
 
     if (document.getElementById('remoteVideo_' + peerUuid)) {
-      console.log(`got remote duplicate stream skipping render, peer ${peerUuid}`);
+      console.log(`got remote duplicate stream, peer ${peerUuid}`);
     } else {
       const vidElement = document.createElement('video');
       vidElement.setAttribute('autoplay', '');
@@ -130,13 +130,12 @@ function gotRemoteStream(event, peerUuid) {
 
       updateLayout();
     }
-    
-  
 }
 
 function checkPeerDisconnect(event, peerUuid) {
-  var state = peerConnections[peerUuid].pc.iceConnectionState;
+  let state = peerConnections[peerUuid].pc.iceConnectionState;
   console.log(`connection with peer ${peerUuid} ${state}`);
+  console.log (`checking event ${event}`);
   if (state === "failed" || state === "closed" || state === "disconnected") {
     delete peerConnections[peerUuid];
     document.getElementById('videos').removeChild(document.getElementById('remoteVideo_' + peerUuid));
@@ -146,10 +145,10 @@ function checkPeerDisconnect(event, peerUuid) {
 
 function updateLayout() {
   // update CSS grid based on number of diplayed videos
-  var rowHeight = '98vh';
-  var colWidth = '98vw';
+  let rowHeight = '98vh';
+  let colWidth = '98vw';
 
-  var numVideos = Object.keys(peerConnections).length + 1; // add one to include local video
+  let numVideos = Object.keys(peerConnections).length + 1; // add one to include local video
 
   if (numVideos > 1 && numVideos <= 4) { // 2x2 grid
     rowHeight = '48vh';
@@ -164,7 +163,7 @@ function updateLayout() {
 }
 
 function makeLabel(label) {
-  var vidLabel = document.createElement('div');
+  const vidLabel = document.createElement('div');
   vidLabel.appendChild(document.createTextNode(label));
   vidLabel.setAttribute('class', 'videoLabel');
   return vidLabel;

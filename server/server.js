@@ -17,7 +17,7 @@ const serverConfig = {
 // ----------------------------------------------------------------------------------------
 
 // Create a server for the client html page
-const handleRequest = function (request, response) {
+const handleRequest = (request, response) => {
   // Render the single client html file for any request the HTTP server receives
   console.log('request received: ' + request.url);
 
@@ -27,6 +27,9 @@ const handleRequest = function (request, response) {
   } else if (request.url === '/style.css') {
     response.writeHead(200, { 'Content-Type': 'text/css' });
     response.end(fs.readFileSync('client/style.css'));
+  } else if (request.url === '/lib.js') {
+    response.writeHead(200, { 'Content-Type': 'application/javascript' });
+    response.end(fs.readFileSync('client/lib.js'));
   } else {
     response.writeHead(200, { 'Content-Type': 'text/html' });
     response.end(fs.readFileSync('client/index.html'));

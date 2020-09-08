@@ -11,6 +11,7 @@ let localStream;
 let serverConnection;
 const peerConnections = {};
 const nameGen = new NameGenerator();
+const idGen = new UuidGenerator();
 
 const peerConnectionConfig = {
   'iceServers': [
@@ -20,7 +21,7 @@ const peerConnectionConfig = {
 };
 
 function start() {
-  localUuid = createUUID();
+  localUuid = idGen.createUUID();
   localDisplayName = nameGen.name();
   document.getElementById('localVideoContainer').appendChild(makeLabel(localDisplayName));
 
@@ -171,13 +172,4 @@ function makeLabel(label) {
 
 function errorHandler(error) {
   console.log(error);
-}
-
-// generate uuid type of object for peer id
-function createUUID() {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  }
-
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
